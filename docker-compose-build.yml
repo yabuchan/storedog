@@ -53,7 +53,8 @@ services:
       - apparmor:unconfined
 
   frontend:
-    image: yabuchan905/datadog-storedog-frontend:v1
+    build:
+      context: ./services/frontend
     command: bash -c "wait-for-it backend:4000 -- npm run dev"
     depends_on:
       - worker
@@ -79,7 +80,8 @@ services:
       com.datadoghq.tags.service: 'store-frontend'
       com.datadoghq.tags.version: '${NEXT_PUBLIC_DD_VERSION_FRONTEND-1.0.0}'
   backend:
-    image: yabuchan905/datadog-storedog-backend:v1
+    build:
+      context: ./services/backend
     command: wait-for-it postgres:5432 -- bundle exec rails s -b 0.0.0.0 -p 4000 --pid /app/tmp/pids/server.pid
     depends_on:
       - 'postgres'
@@ -114,7 +116,8 @@ services:
       com.datadoghq.tags.service: 'store-backend'
       com.datadoghq.tags.version: '${DD_VERSION_BACKEND-1.0.0}'
   worker:
-    image: yabuchan905:datadog-storedog-backend:v1
+    build:
+      context: ./services/backend
     command: wait-for-it postgres:5432 -- bundle exec sidekiq -C config/sidekiq.yml
     depends_on:
       - 'postgres'
@@ -147,7 +150,8 @@ services:
       com.datadoghq.tags.service: 'store-worker'
       com.datadoghq.tags.version: '${DD_VERSION_BACKEND-1.0.0}'
   discounts:
-    image: yabuchan905/datadog-storedog-discounts
+    build:
+      context: ./services/discounts
     command: wait-for-it postgres:5432 -- ddtrace-run flask run --port=2814 --host=0.0.0.0
     depends_on:
       - postgres
@@ -174,7 +178,8 @@ services:
       com.datadoghq.tags.service: 'store-discounts'
       com.datadoghq.tags.version: '${DD_VERSION_DISCOUNTS-1.0.0}'
   ads:
-    image: yabuchan905/datadog-storedog-ads:v1
+    build:
+      context: ./services/ads/java
     depends_on:
       - dd-agent
     environment:
@@ -192,7 +197,8 @@ services:
       com.datadoghq.tags.service: 'store-ads'
       com.datadoghq.tags.version: '${DD_VERSION_ADS-1.0.0}'
   nginx:
-    image: yabuchan905/datadog-storedog-nginx:v1
+    build:
+      context: ./services/nginx
     restart: always
     ports:
       - '80:80'
@@ -214,7 +220,8 @@ services:
       com.datadoghq.ad.init_configs: '[{}]'
       com.datadoghq.ad.instances: '[{"nginx_status_url": "http://%%host%%:81/nginx_status/"}]'
   postgres:
-    image: yabuchan905/datadog-storedog-postgres:v1
+    build:
+      context: ./services/postgres
     restart: always
     depends_on:
       - dd-agent
@@ -257,7 +264,8 @@ services:
       com.datadoghq.ad.instances: '[{"host":"%%host%%", "port":6379}]'
       com.datadoghq.ad.logs: '[{"source": "redis", "service": "redis"}]'
   puppeteer:
-    image: yabuchan905/datadog-storedog-puppeteer:v1
+    build:
+      context: ./services/puppeteer
     platform: linux/amd64
     environment:
       - STOREDOG_URL=${STOREDOG_URL-http://nginx:80}
